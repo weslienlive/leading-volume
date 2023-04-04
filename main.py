@@ -8,7 +8,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup
 from time import sleep
-from tqdm import tqdm
 
 options = Options()
 options.add_argument('--headless')
@@ -35,7 +34,7 @@ try:
     lead_cex = {}
 
     # loop through all the divs in divs list
-    for div in tqdm(divs, desc="looping through all the divs"):
+    for div in divs:
         # get the link from the div
         link = BeautifulSoup(div.get_attribute('innerHTML'), 'html.parser').find('a')
         href = link['href']
@@ -48,10 +47,10 @@ try:
         links[coin_name] = href
 
     # loop through all the links in the links dictionary
-    for coin_name, href in tqdm(links.items(), desc="looping through all links in links dict"):
+    for coin_name, href in links.items():
         # navigate to the coin page
         driver.get(f'https://www.coingecko.com{href}')
-        sleep(5)  # wait for the page to load
+        sleep(2)  # wait for the page to load
         
         # extract the required information from the page source
         soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -65,7 +64,7 @@ try:
         
         # navigate back to the watchlist page
         driver.back()
-        sleep(5)  # wait for the page to load
+        sleep(2)  # wait for the page to load
 
 
     # print the extracted information for leading exchanges
