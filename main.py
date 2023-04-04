@@ -8,6 +8,10 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup
 from time import sleep
+import requests
+import json
+
+
 
 options = Options()
 options.add_argument('--headless')
@@ -56,11 +60,19 @@ try:
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         tbody = soup.find('tbody', {'data-target': 'gecko-table.paginatedShowMoreTbody'})
         Exchange = tbody.find('a').text
-        Symbol = tbody.find_all('td')[2].find('a').text
+        Symbol = tbody.find_all('td')[2].find('a').text.strip()
+        Volume = tbody.find_all('td')[9].text.strip()
         
         # store the extracted information if the exchange is one of the leading exchanges
         if Exchange in ['Upbit', 'Bithumb', 'Paribu', 'BtcTurk PRO']:
-            lead_cex[coin_name] = {'Exchange': Exchange, 'Symbol': Symbol}
+            lead_cex[coin_name] = {'Exchange': Exchange, 'Symbol': Symbol, 'Volume' : Volume}
+
+            # send a telegram message
+            bot_token = '6129356517:AAFYdtrko-9IizivM0IL0LOrMhzFozzbyVU'
+            chat_id = '5710064724'
+            message = f"Coin: {coin_name}\nExchange: {Exchange}\nSymbol: {Symbol}\nVolume: {Volume}"
+            send_text = f'https://api.telegram.org/bot{bot_token}/sendMessage?chat_id={chat_id}&parse_mode=Markdown&text={message}'
+            response = requests.get(send_text)
         
         # navigate back to the watchlist page
         driver.back()
