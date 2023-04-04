@@ -28,7 +28,6 @@ def main():
     previous_lead_cex = {}
 
     while True:
-        pass
         try:
             # Check if the table element is present in the page's DOM
             table = driver.find_elements(By.XPATH, "//tbody[@data-target='currencies.contentBox']")
