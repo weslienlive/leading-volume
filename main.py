@@ -6,6 +6,14 @@ from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from time import sleep
 import requests
+from dotenv import load_dotenv
+import os
+
+
+def configure():
+    load_dotenv()
+
+configure()
 
 
 options = Options()
@@ -34,7 +42,7 @@ def main():
 
             # get all the divs with class tw-flex.center
             divs = table[0].find_elements(By.CLASS_NAME, 'tw-flex.center')
-            print(f'Table found.')
+            print('Table found.')
 
             links = {}
             lead_cex = {}
@@ -104,13 +112,13 @@ def main():
             # close the driver
             driver.quit()
 
-        sleep(3600)
+        sleep(300)
 
 
 def telegram_message(lead_cex):
     # send a telegram message
-    bot_token = '6129356517:AAFYdtrko-9IizivM0IL0LOrMhzFozzbyVU'
-    chat_id = '5710064724'
+    chat_id = os.getenv('CHAT_ID')
+    bot_token = os.getenv('BOT_TOKEN')
 
     for coin_name, data in lead_cex.items():
         exchange = data["Exchange"]
@@ -120,5 +128,8 @@ def telegram_message(lead_cex):
         send_text = f'https://api.telegram.org/bot{bot_token}/sendMessage?chat_id={chat_id}&parse_mode=Markdown&text={message}'
         response = requests.get(send_text)
         print(response.content)
+
+
+
 
 main()
