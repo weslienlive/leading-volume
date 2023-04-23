@@ -64,4 +64,4 @@ while True:
                 print(key)
                 send_telegram_message(key)
 
-    sleep(1200)
+    sleep(3600)
