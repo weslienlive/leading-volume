@@ -63,12 +63,11 @@ while True:
                 prev_data['markets'] = key
                 print(key)
                 
-                message = f'''
-                EXCHANGE: {exchange}
-                NAME: {coin_name}
-                SYMBOL: {pair}
-                VOLUME: {volume}
-                '''
+                # split the key to get the values of exchange, pair, and volume
+                exchange_key, pair_key, volume_key = key.split(':')
+
+                # create the message using the values from the key
+                message = f'EXCHANGE: {exchange_key}\nNAME: {coin_name}\nSYMBOL: {pair_key}\nVOLUME: {volume_key}'
                 send_telegram_message(message)
 
-    sleep(900)
+    sleep(1200)
