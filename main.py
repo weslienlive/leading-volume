@@ -3,6 +3,9 @@ from bs4 import BeautifulSoup
 from time import sleep
 from dotenv import load_dotenv
 import os
+import streamlit as st
+import pandas as pd
+
 
 
 def configure():
@@ -13,20 +16,20 @@ configure()
 
 TOKEN_BOT = os.getenv('TOKEN_BOT')
 CHAT_ID = os.getenv('CHAT_ID')
-url = 'https://www.coingecko.com/en/watchlists/high-volume'
+coingecko_url = 'https://www.coingecko.com/en/watchlists/high-volume'
 exchanges = ['Upbit', 'Bithumb', 'Paribu', 'BtcTurk PRO']
 prev_data = {}
 
 def send_telegram_message(message):
-    url = f'https://api.telegram.org/bot{TOKEN_BOT}/sendMessage'
+    telegram_url = f'https://api.telegram.org/bot{TOKEN_BOT}/sendMessage'
     params = {'chat_id': CHAT_ID, 'text': message}
-    response = requests.post(url, params=params)
+    response = requests.post(telegram_url, params=params)
     if response.status_code != 200:
         print(f'Failed to send message to Telegram. Error code: {response.status_code}')
 
 
 while True:
-    response = requests.get(url)
+    response = requests.get(coingecko_url)
     soup = BeautifulSoup(response.content, 'html.parser')
 
     tbody = soup.find('tbody', {'data-target': 'currencies.contentBox'})
@@ -64,4 +67,4 @@ while True:
                 print(key)
                 send_telegram_message(key)
 
-    sleep(3600)
+    sleep(4*60*60)
