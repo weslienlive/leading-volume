@@ -3,10 +3,6 @@ from bs4 import BeautifulSoup
 from time import sleep
 from dotenv import load_dotenv
 import os
-import streamlit as st
-import pandas as pd
-
-
 
 def configure():
     load_dotenv()
