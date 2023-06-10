@@ -13,8 +13,10 @@ configure()
 TOKEN_BOT = os.getenv('TOKEN_BOT')
 CHAT_ID = os.getenv('CHAT_ID')
 coingecko_url = 'https://www.coingecko.com/en/watchlists/high-volume'
-exchanges = ['Upbit', 'Bithumb', 'Paribu', 'BtcTurk PRO']
-prev_data = {}
+high_volume_coins = []
+upbit_vol = []
+upbit_tickers_oi = []
+
 
 def send_telegram_message(message):
     telegram_url = f'https://api.telegram.org/bot{TOKEN_BOT}/sendMessage'
@@ -24,47 +26,87 @@ def send_telegram_message(message):
         print(f'Failed to send message to Telegram. Error code: {response.status_code}')
 
 
-try:
-    while True:
-        response = requests.get(coingecko_url)
-        soup = BeautifulSoup(response.content, 'html.parser')
+def coingecko_hvc():
+    response = requests.get(coingecko_url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    tbody = soup.find('tbody', {'data-target': 'currencies.contentBox'})
 
-        tbody = soup.find('tbody', {'data-target': 'currencies.contentBox'})
+    for tr in tbody.find_all('tr'):
+        td = tr.find('td', {'data-sort': True})
+        if td:
+            text = td.text.strip()
+            coin_name, symbol = text.split('\n\n')
+            symbol = symbol.strip()  # Remove leading/trailing whitespace
+            high_volume_coins.append(symbol)
 
-        high_volume_coins = []
 
-        for tr in tbody.find_all('tr'):
-            td = tr.find('td', {'data-sort': True})
-            if td:
-                url = td.find('a')['href']  # get the URL from the anchor tag
-                text = td.text.strip()
-                coin_name, symbol = text.split('\n\n')
-                coin = {}
-                coin['coin_name'] = coin_name
-                coin['url'] = url  # add the URL to the dictionary
+def upbit_hvc():
+    api_url = 'https://api.coingecko.com/api/v3/exchanges/upbit/tickers'
+    response = requests.get(api_url)
 
-                markets_url = f"https://www.coingecko.com{coin['url']}"
-                response_markets = requests.get(markets_url)
-                soup_markets = BeautifulSoup(response_markets.content, 'html.parser')
-                tbody_markets = soup_markets.find('tbody', {'data-target': 'gecko-table.paginatedShowMoreTbody'})
-                tr_markets = tbody_markets.find('tr')
-                tds = tr_markets.find_all('td')
-                exchange = tds[1].find('a').text.strip()
+    if response.status_code == 200:
+        data = response.json()
+        tickers = data['tickers']
+        sorted_tickers = sorted(tickers, key=lambda x: x['converted_volume']['usd'], reverse=True)
+        bases_seen = set()  # To keep track of bases already added
+        
+        for ticker in sorted_tickers:
+            base = ticker['base']
+            volume = ticker['converted_volume']['usd']
+            
+            if base in high_volume_coins and base not in bases_seen:
+                bases_seen.add(base)    
+                upbit_vol.append({'base': base, 'volume': volume})
 
-                pair = tds[2].find('a').text.strip()
-                volume = tds[8].text.strip()
-                coin['exchange'] = exchange
-                coin['pair'] = pair
-                coin['volume'] = volume
-                key = f"{exchange}:{pair}:{volume}"
 
-                if key not in prev_data and exchange in exchanges:
-                    high_volume_coins.append(coin)
-                    prev_data['markets'] = key
-                    print(key)
-                    send_telegram_message(key)
+def ticker_oi():
+    for coin in upbit_vol:
+        base = coin['base']
+        open_interest_url = f"https://api.bybit.com/derivatives/v3/public/open-interest?category=linear&symbol={base}USDT&interval=5min"
+        response = requests.get(open_interest_url)
 
-        sleep(4*60*60)
+        if response.status_code == 200:
+            open_interest_data = response.json()
+            if 'list' in open_interest_data['result']:
+                open_interest = open_interest_data['result']['list']
 
-except Exception as e:
-    send_telegram_message(e)
+                if len(open_interest) == 0:  # Check if the list is empty
+                    continue  # Skip to the next iteration
+
+                open_interest = open_interest_data['result']['list'][0]['openInterest']
+                upbit_tickers_oi.append({'base': base, 'oi' : open_interest})
+
+
+def aggr():
+    data = []
+    message = f"UPBIT VOLUME \n---------------------------------------------------------- \n"
+    for coin in upbit_vol:
+        base = coin['base']
+        volume = coin['volume']
+        
+        for ticker in upbit_tickers_oi:
+            if ticker['base'] == base:
+                oi = float(ticker['oi'])
+                data.append({'base': base, 'volume': volume, 'oi': oi})
+                break
+    
+    sorted_data = sorted(data, key=lambda x: x['oi'], reverse=True)
+    
+    for entry in sorted_data:
+        base = entry['base']
+        volume = entry['volume']
+        oi = int(entry['oi'])
+        message += f"{base} | Upbit Volume: {volume} | OI: {oi}\n"
+
+    send_telegram_message(message)
+
+
+
+
+while True:
+    coingecko_hvc()
+    upbit_hvc()
+    ticker_oi()
+    aggr()
+    sleep(7200)
+
