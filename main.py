@@ -84,23 +84,29 @@ def ticker_oi():
 def aggr():
     print("Aggregating output...\n\n")
     message = ""  # Reset the message variable to an empty string
-    
+
     data = []
     message += f"UPBIT VOLUME \n----------------------------------- \n"
-    
+
     for coin in upbit_vol:
         base = coin['base']
         volume = int(coin['volume'])  # Convert volume to an integer
-        
+
         for ticker in upbit_tickers_oi:
             if ticker['base'] == base:
                 oi = float(ticker['oi'])
                 entry = {'base': base, 'volume': volume, 'oi': oi}
-                
+
                 # Check if the entry already exists in the data list
                 if entry not in data:
-                    data.append(entry)
-                
+                    # Check if the base from the entry is already present in the data
+                    for i, existing_entry in enumerate(data):
+                        if existing_entry['base'] == entry['base']:
+                            data[i] = entry  # Replace the existing entry with the new entry
+                            break
+                    else:
+                        data.append(entry)
+
                 break
     
     sorted_data = sorted(data, key=lambda x: x['volume'], reverse=True)
@@ -122,9 +128,11 @@ def aggr():
         elif volume_formatted.count(",") == 2:
             volume_formatted = volume_formatted + "M"
         
-        message += f"{base} | Upbit Volume: {volume_formatted} | OI: {oi_formatted}\n"
+        message += f"{base} | Upbit Vol: {volume_formatted} | OI: {oi_formatted}\n"
 
     send_telegram_message(message)
+    #print(message)
+    data.clear()
     
 
    
