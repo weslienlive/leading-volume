@@ -109,7 +109,7 @@ def aggr():
 
                 break
     
-    sorted_data = sorted(data, key=lambda x: x['volume'], reverse=True)
+    sorted_data = sorted(data, key=lambda x: x['oi'], reverse=True)
     
     for entry in sorted_data:
         base = entry['base']
