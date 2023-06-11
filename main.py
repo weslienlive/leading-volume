@@ -27,6 +27,7 @@ def send_telegram_message(message):
 
 
 def coingecko_hvc():
+    print("Fetching coingecko high volume coins...")
     response = requests.get(coingecko_url)
     soup = BeautifulSoup(response.content, 'html.parser')
     tbody = soup.find('tbody', {'data-target': 'currencies.contentBox'})
@@ -41,6 +42,7 @@ def coingecko_hvc():
 
 
 def upbit_hvc():
+    print("Fetching upbit volume...") 
     api_url = 'https://api.coingecko.com/api/v3/exchanges/upbit/tickers'
     response = requests.get(api_url)
 
@@ -60,6 +62,8 @@ def upbit_hvc():
 
 
 def ticker_oi():
+    print("Fetching open interest...")
+    
     for coin in upbit_vol:
         base = coin['base']
         open_interest_url = f"https://api.bybit.com/derivatives/v3/public/open-interest?category=linear&symbol={base}USDT&interval=5min"
@@ -78,30 +82,52 @@ def ticker_oi():
 
 
 def aggr():
+    print("Aggregating output...\n\n")
+    message = ""  # Reset the message variable to an empty string
+    
     data = []
-    message = f"UPBIT VOLUME \n---------------------------------------------------------- \n"
+    message += f"UPBIT VOLUME \n----------------------------------- \n"
+    
     for coin in upbit_vol:
         base = coin['base']
-        volume = coin['volume']
+        volume = int(coin['volume'])  # Convert volume to an integer
         
         for ticker in upbit_tickers_oi:
             if ticker['base'] == base:
                 oi = float(ticker['oi'])
-                data.append({'base': base, 'volume': volume, 'oi': oi})
+                entry = {'base': base, 'volume': volume, 'oi': oi}
+                
+                # Check if the entry already exists in the data list
+                if entry not in data:
+                    data.append(entry)
+                
                 break
     
-    sorted_data = sorted(data, key=lambda x: x['oi'], reverse=True)
+    sorted_data = sorted(data, key=lambda x: x['volume'], reverse=True)
     
     for entry in sorted_data:
         base = entry['base']
         volume = entry['volume']
         oi = int(entry['oi'])
-        message += f"{base} | Upbit Volume: {volume} | OI: {oi}\n"
+        oi_formatted = "{:,.0f}".format(oi)
+        volume_formatted = "{:,.0f}".format(volume)
+        
+        if oi_formatted.count(",") == 1:
+            oi_formatted = oi_formatted + "K"
+        elif oi_formatted.count(",") == 2:
+            oi_formatted = oi_formatted + "M"
+            
+        if volume_formatted.count(",") == 1:
+            volume_formatted = volume_formatted + "K"
+        elif volume_formatted.count(",") == 2:
+            volume_formatted = volume_formatted + "M"
+        
+        message += f"{base} | Upbit Volume: {volume_formatted} | OI: {oi_formatted}\n"
 
     send_telegram_message(message)
+    
 
-
-
+   
 
 while True:
     coingecko_hvc()
@@ -109,4 +135,6 @@ while True:
     ticker_oi()
     aggr()
     sleep(7200)
+
+   
 
