@@ -114,21 +114,14 @@ def aggr():
     for entry in sorted_data:
         base = entry['base']
         volume = entry['volume']
-        oi = int(entry['oi'])
-        oi_formatted = "{:,.0f}".format(oi)
         volume_formatted = "{:,.0f}".format(volume)
-        
-        if oi_formatted.count(",") == 1:
-            oi_formatted = oi_formatted + "K"
-        elif oi_formatted.count(",") == 2:
-            oi_formatted = oi_formatted + "M"
             
         if volume_formatted.count(",") == 1:
             volume_formatted = volume_formatted + "K"
         elif volume_formatted.count(",") == 2:
             volume_formatted = volume_formatted + "M"
         
-        message += f"{base} | Upbit Vol: {volume_formatted} | OI: {oi_formatted}\n"
+        message += f"{base} | {volume_formatted}\n"
 
     send_telegram_message(message)
     #print(message)
@@ -142,7 +135,7 @@ while True:
     upbit_hvc()
     ticker_oi()
     aggr()
-    sleep(7200)
+    sleep(3600)
 
    
 
