@@ -108,20 +108,26 @@ def aggr():
                         data.append(entry)
 
                 break
-    
+
     sorted_data = sorted(data, key=lambda x: x['volume'], reverse=True)
-    
+
+    counter = 0  # Counter variable to keep track of the number of entries printed
+
     for entry in sorted_data:
         base = entry['base']
         volume = entry['volume']
         volume_formatted = "{:,.0f}".format(volume)
-            
+
         if volume_formatted.count(",") == 1:
             volume_formatted = volume_formatted + "K"
         elif volume_formatted.count(",") == 2:
             volume_formatted = volume_formatted + "M"
-        
+
         message += f"{base} | {volume_formatted}\n"
+        counter += 1
+
+        if counter == 5:  # Print only the top 5 entries
+            break
 
     send_telegram_message(message)
     #print(message)
