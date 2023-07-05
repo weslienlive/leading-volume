@@ -141,7 +141,7 @@ while True:
     upbit_hvc()
     ticker_oi()
     aggr()
-    sleep(7200)
+    sleep(3600)
 
    
 
